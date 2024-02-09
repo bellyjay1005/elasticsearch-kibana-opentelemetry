@@ -1,0 +1,24 @@
+---
+# Source: elasticsearch/charts/kibana/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch-kibana
+  namespace: "cti-svcs-cdso-gdk-169643"
+  labels:
+    app.kubernetes.io/instance: elasticsearch
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kibana
+    app.kubernetes.io/version: 8.12.0
+    helm.sh/chart: kibana-10.8.0
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  ports:
+    - name: http
+      port: 5601
+      targetPort: http
+      nodePort: null
+  selector:
+    app.kubernetes.io/instance: elasticsearch
+    app.kubernetes.io/name: kibana

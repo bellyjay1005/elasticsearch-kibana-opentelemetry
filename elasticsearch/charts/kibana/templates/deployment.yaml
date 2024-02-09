@@ -1,0 +1,129 @@
+---
+# Source: elasticsearch/charts/kibana/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch-kibana
+  namespace: "cti-svcs-cdso-gdk-169643"
+  labels:
+    app.kubernetes.io/instance: elasticsearch
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kibana
+    app.kubernetes.io/version: 8.12.0
+    helm.sh/chart: kibana-10.8.0
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: elasticsearch
+      app.kubernetes.io/name: kibana
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: elasticsearch
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: kibana
+        app.kubernetes.io/version: 8.12.0
+        helm.sh/chart: kibana-10.8.0
+        app: kibana
+    spec:
+      
+      automountServiceAccountToken: false
+      affinity:
+        podAffinity:
+          
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/instance: elasticsearch
+                    app.kubernetes.io/name: kibana
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+          
+      securityContext:
+        fsGroup: 1001
+        fsGroupChangePolicy: Always
+        supplementalGroups: []
+        sysctls: []
+      serviceAccountName: elasticsearch-kibana
+      initContainers:
+      containers:
+        - name: kibana
+          image: docker.io/bitnami/kibana:8.12.0-debian-11-r1
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            runAsUser: 1001
+            seLinuxOptions: {}
+            seccompProfile:
+              type: RuntimeDefault
+          env:
+            - name: BITNAMI_DEBUG
+              value: "false"
+            - name: KIBANA_PORT_NUMBER
+              value: "5601"
+            - name: KIBANA_ELASTICSEARCH_URL
+              value: "http://elasticsearch:9200"
+            - name: KIBANA_ELASTICSEARCH_PORT_NUMBER
+              value: "9200"
+            - name: KIBANA_FORCE_INITSCRIPTS
+              value: "false"
+            - name: KIBANA_SERVER_ENABLE_TLS
+              value: "false"
+            - name: KIBANA_ELASTICSEARCH_ENABLE_TLS
+              value: "false"
+            - name: KIBANA_ELASTICSEARCH_TLS_USE_PEM
+              value: "false"
+            - name: KIBANA_ELASTICSEARCH_TLS_VERIFICATION_MODE
+              value: "full"
+          envFrom:
+          ports:
+            - name: http
+              containerPort: 5601
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+            httpGet:
+              path: /login
+              port: http
+              scheme: HTTP
+          readinessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+            httpGet:
+              path: /status
+              port: http
+              scheme: HTTP
+          resources:
+            limits: {}
+            requests: {}
+          volumeMounts:
+            - name: kibana-data
+              mountPath: /bitnami/kibana
+            - name: kibana-config
+              mountPath: /bitnami/kibana/conf
+      volumes:
+        - name: kibana-data
+          persistentVolumeClaim:
+            claimName: elasticsearch-kibana
+        - name: kibana-config
+          configMap:
+            name: elasticsearch-kibana-conf

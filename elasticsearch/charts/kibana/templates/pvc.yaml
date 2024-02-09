@@ -1,0 +1,19 @@
+---
+# Source: elasticsearch/charts/kibana/templates/pvc.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: elasticsearch-kibana
+  namespace: "cti-svcs-cdso-gdk-169643"
+  labels:
+    app.kubernetes.io/instance: elasticsearch
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kibana
+    app.kubernetes.io/version: 8.12.0
+    helm.sh/chart: kibana-10.8.0
+spec:
+  accessModes:
+    - "ReadWriteOnce"
+  resources:
+    requests:
+      storage: "10Gi"

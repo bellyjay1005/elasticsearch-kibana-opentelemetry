@@ -1,0 +1,20 @@
+---
+# Source: elasticsearch/charts/kibana/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: elasticsearch-kibana-conf
+  namespace: "cti-svcs-cdso-gdk-169643"
+  labels:
+    app.kubernetes.io/instance: elasticsearch
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kibana
+    app.kubernetes.io/version: 8.12.0
+    helm.sh/chart: kibana-10.8.0
+data:
+  kibana.yml: |
+    pid.file: /opt/bitnami/kibana/tmp/kibana.pid
+    server.host: "::"
+    server.port: 5601
+    elasticsearch.hosts: [http://elasticsearch:9200]
+    server.rewriteBasePath: false
