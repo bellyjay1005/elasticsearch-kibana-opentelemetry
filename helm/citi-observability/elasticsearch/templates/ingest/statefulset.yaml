@@ -1,9 +1,9 @@
 ---
-# Source: elasticsearch/templates/data/statefulset.yaml
+# Source: elasticsearch/templates/ingest/statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: elasticsearch-data
+  name: elasticsearch-ingest
   namespace: "cti-svcs-cdso-gdk-169643"
   labels:
     app.kubernetes.io/instance: elasticsearch
@@ -11,9 +11,9 @@ metadata:
     app.kubernetes.io/name: elasticsearch
     app.kubernetes.io/version: 8.12.0
     helm.sh/chart: elasticsearch-19.17.2
-    app.kubernetes.io/component: data
+    app.kubernetes.io/component: ingest
     ## Istio Labels: https://istio.io/docs/ops/deployment/requirements/
-    app: data
+    app: ingest
 spec:
   replicas: 2
   podManagementPolicy: Parallel
@@ -21,8 +21,8 @@ spec:
     matchLabels:
       app.kubernetes.io/instance: elasticsearch
       app.kubernetes.io/name: elasticsearch
-      app.kubernetes.io/component: data
-  serviceName: elasticsearch-data-hl
+      app.kubernetes.io/component: ingest
+  serviceName: elasticsearch-ingest-hl
   updateStrategy:
     type: RollingUpdate
   template:
@@ -33,12 +33,13 @@ spec:
         app.kubernetes.io/name: elasticsearch
         app.kubernetes.io/version: 8.12.0
         helm.sh/chart: elasticsearch-19.17.2
-        app.kubernetes.io/component: data
+        app.kubernetes.io/component: ingest
         ## Istio Labels: https://istio.io/docs/ops/deployment/requirements/
-        app: data
+        app: ingest
       annotations:
+        checksum/tls: 476cbedc28eee12d7568a21f3d939d511343d93a42f7a7e3b41610244eeebfbe
     spec:
-      serviceAccountName: elasticsearch-data
+      serviceAccountName: elasticsearch-ingest
       
       automountServiceAccountToken: false
       affinity:
@@ -97,7 +98,7 @@ spec:
             - name: ELASTICSEARCH_IS_DEDICATED_NODE
               value: "yes"
             - name: ELASTICSEARCH_NODE_ROLES
-              value: "data"
+              value: "ingest"
             - name: ELASTICSEARCH_TRANSPORT_PORT_NUMBER
               value: "9300"
             - name: ELASTICSEARCH_HTTP_PORT_NUMBER
@@ -113,9 +114,24 @@ spec:
             - name: ELASTICSEARCH_MINIMUM_MASTER_NODES
               value: "2"
             - name: ELASTICSEARCH_ADVERTISED_HOSTNAME
-              value: "$(MY_POD_NAME).elasticsearch-data-hl.cti-svcs-cdso-gdk-169643.svc.cluster.local"
+              value: "$(MY_POD_NAME).elasticsearch-ingest-hl.cti-svcs-cdso-gdk-169643.svc.cluster.local"
             - name: ELASTICSEARCH_HEAP_SIZE
-              value: "1024m"
+              value: "128m"
+            - name: ELASTICSEARCH_ENABLE_SECURITY
+              value: "true"
+            - name: ELASTICSEARCH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                    name: elasticsearch
+                    key: elasticsearch-password
+            - name: ELASTICSEARCH_ENABLE_FIPS_MODE
+              value: "false"
+            - name: ELASTICSEARCH_TLS_VERIFICATION_MODE
+              value: "full"
+            - name: ELASTICSEARCH_ENABLE_REST_TLS
+              value: "true"
+            - name: ELASTICSEARCH_TLS_USE_PEM
+              value: "true"
           ports:
             - name: rest-api
               containerPort: 9200
@@ -142,17 +158,17 @@ spec:
             limits: {}
             requests:
               cpu: 25m
-              memory: 2048Mi
+              memory: 256Mi
           volumeMounts:
             - name: data
               mountPath: /bitnami/elasticsearch/data
+            - name: elasticsearch-certificates
+              mountPath: /opt/bitnami/elasticsearch/config/certs
+              readOnly: true
       volumes:
-  volumeClaimTemplates:
-    - metadata:
-        name: "data"
-      spec:
-        accessModes:
-          - "ReadWriteOnce"
-        resources:
-          requests:
-            storage: "16Gi"
+        - name: "data"
+          emptyDir: {}
+        - name: elasticsearch-certificates
+          secret:
+            secretName: elasticsearch-ingest-crt
+            defaultMode: 256

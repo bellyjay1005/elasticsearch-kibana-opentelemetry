@@ -1,9 +1,9 @@
 ---
-# Source: elasticsearch/templates/ingest/statefulset.yaml
+# Source: elasticsearch/templates/data/statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: elasticsearch-ingest
+  name: elasticsearch-data
   namespace: "cti-svcs-cdso-gdk-169643"
   labels:
     app.kubernetes.io/instance: elasticsearch
@@ -11,9 +11,9 @@ metadata:
     app.kubernetes.io/name: elasticsearch
     app.kubernetes.io/version: 8.12.0
     helm.sh/chart: elasticsearch-19.17.2
-    app.kubernetes.io/component: ingest
+    app.kubernetes.io/component: data
     ## Istio Labels: https://istio.io/docs/ops/deployment/requirements/
-    app: ingest
+    app: data
 spec:
   replicas: 2
   podManagementPolicy: Parallel
@@ -21,8 +21,8 @@ spec:
     matchLabels:
       app.kubernetes.io/instance: elasticsearch
       app.kubernetes.io/name: elasticsearch
-      app.kubernetes.io/component: ingest
-  serviceName: elasticsearch-ingest-hl
+      app.kubernetes.io/component: data
+  serviceName: elasticsearch-data-hl
   updateStrategy:
     type: RollingUpdate
   template:
@@ -33,12 +33,13 @@ spec:
         app.kubernetes.io/name: elasticsearch
         app.kubernetes.io/version: 8.12.0
         helm.sh/chart: elasticsearch-19.17.2
-        app.kubernetes.io/component: ingest
+        app.kubernetes.io/component: data
         ## Istio Labels: https://istio.io/docs/ops/deployment/requirements/
-        app: ingest
+        app: data
       annotations:
+        checksum/tls: 955dd9e8d47943e996e914ca92c200892b7781b3094f37e3fc02c463e284f945
     spec:
-      serviceAccountName: elasticsearch-ingest
+      serviceAccountName: elasticsearch-data
       
       automountServiceAccountToken: false
       affinity:
@@ -97,7 +98,7 @@ spec:
             - name: ELASTICSEARCH_IS_DEDICATED_NODE
               value: "yes"
             - name: ELASTICSEARCH_NODE_ROLES
-              value: "ingest"
+              value: "data"
             - name: ELASTICSEARCH_TRANSPORT_PORT_NUMBER
               value: "9300"
             - name: ELASTICSEARCH_HTTP_PORT_NUMBER
@@ -113,9 +114,24 @@ spec:
             - name: ELASTICSEARCH_MINIMUM_MASTER_NODES
               value: "2"
             - name: ELASTICSEARCH_ADVERTISED_HOSTNAME
-              value: "$(MY_POD_NAME).elasticsearch-ingest-hl.cti-svcs-cdso-gdk-169643.svc.cluster.local"
+              value: "$(MY_POD_NAME).elasticsearch-data-hl.cti-svcs-cdso-gdk-169643.svc.cluster.local"
             - name: ELASTICSEARCH_HEAP_SIZE
-              value: "128m"
+              value: "2048m"
+            - name: ELASTICSEARCH_ENABLE_SECURITY
+              value: "true"
+            - name: ELASTICSEARCH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                    name: elasticsearch
+                    key: elasticsearch-password
+            - name: ELASTICSEARCH_ENABLE_FIPS_MODE
+              value: "false"
+            - name: ELASTICSEARCH_TLS_VERIFICATION_MODE
+              value: "full"
+            - name: ELASTICSEARCH_ENABLE_REST_TLS
+              value: "true"
+            - name: ELASTICSEARCH_TLS_USE_PEM
+              value: "true"
           ports:
             - name: rest-api
               containerPort: 9200
@@ -139,13 +155,29 @@ spec:
               command:
                 - /opt/bitnami/scripts/elasticsearch/healthcheck.sh
           resources:
-            limits: {}
+            limits:
+              cpu: 500m
+              memory: 4Gi
             requests:
-              cpu: 25m
-              memory: 256Mi
+              cpu: 250m
+              memory: 2Gi
           volumeMounts:
             - name: data
               mountPath: /bitnami/elasticsearch/data
+            - name: elasticsearch-certificates
+              mountPath: /opt/bitnami/elasticsearch/config/certs
+              readOnly: true
       volumes:
-        - name: "data"
-          emptyDir: {}
+        - name: elasticsearch-certificates
+          secret:
+            secretName: elasticsearch-data-crt
+            defaultMode: 256
+  volumeClaimTemplates:
+    - metadata:
+        name: "data"
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: "16Gi"

@@ -74,17 +74,22 @@ spec:
             - name: KIBANA_PORT_NUMBER
               value: "5601"
             - name: KIBANA_ELASTICSEARCH_URL
-              value: "http://elasticsearch:9200"
+              value: "https://elasticsearch:9200"
             - name: KIBANA_ELASTICSEARCH_PORT_NUMBER
               value: "9200"
             - name: KIBANA_FORCE_INITSCRIPTS
               value: "false"
             - name: KIBANA_SERVER_ENABLE_TLS
               value: "false"
+            - name: KIBANA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: elasticsearch-kibana
+                  key: kibana-password
             - name: KIBANA_ELASTICSEARCH_ENABLE_TLS
-              value: "false"
+              value: "true"
             - name: KIBANA_ELASTICSEARCH_TLS_USE_PEM
-              value: "false"
+              value: "true"
             - name: KIBANA_ELASTICSEARCH_TLS_VERIFICATION_MODE
               value: "full"
           envFrom:
@@ -120,10 +125,17 @@ spec:
               mountPath: /bitnami/kibana
             - name: kibana-config
               mountPath: /bitnami/kibana/conf
+            - name: elasticsearch-certificates
+              mountPath: /opt/bitnami/kibana/config/certs/elasticsearch
+              readOnly: true
       volumes:
         - name: kibana-data
           persistentVolumeClaim:
             claimName: elasticsearch-kibana
+        - name: elasticsearch-certificates
+          secret:
+            secretName: elasticsearch-coordinating-crt
+            defaultMode: 256
         - name: kibana-config
           configMap:
             name: elasticsearch-kibana-conf

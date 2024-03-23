@@ -1,9 +1,9 @@
 ---
-# Source: elasticsearch/templates/coordinating/statefulset.yaml
+# Source: elasticsearch/templates/master/statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: elasticsearch-coordinating
+  name: elasticsearch-master
   namespace: "cti-svcs-cdso-gdk-169643"
   labels:
     app.kubernetes.io/instance: elasticsearch
@@ -11,20 +11,20 @@ metadata:
     app.kubernetes.io/name: elasticsearch
     app.kubernetes.io/version: 8.12.0
     helm.sh/chart: elasticsearch-19.17.2
-    app.kubernetes.io/component: coordinating-only
+    app.kubernetes.io/component: master
     ## Istio Labels: https://istio.io/docs/ops/deployment/requirements/
-    app: coordinating-only
+    app: master
 spec:
   replicas: 2
+  podManagementPolicy: Parallel
   selector:
     matchLabels:
       app.kubernetes.io/instance: elasticsearch
       app.kubernetes.io/name: elasticsearch
-      app.kubernetes.io/component: coordinating-only
+      app.kubernetes.io/component: master
+  serviceName: elasticsearch-master-hl
   updateStrategy:
     type: RollingUpdate
-  serviceName: elasticsearch-coordinating-hl
-  podManagementPolicy: Parallel
   template:
     metadata:
       labels:
@@ -33,12 +33,13 @@ spec:
         app.kubernetes.io/name: elasticsearch
         app.kubernetes.io/version: 8.12.0
         helm.sh/chart: elasticsearch-19.17.2
-        app.kubernetes.io/component: coordinating-only
+        app.kubernetes.io/component: master
         ## Istio Labels: https://istio.io/docs/ops/deployment/requirements/
-        app: coordinating-only
+        app: master
       annotations:
+        checksum/tls: 3609afeb805a1e52b61832f66b3894c90259b3ebf7449926bb07c78543f7257f
     spec:
-      serviceAccountName: elasticsearch-coordinating
+      serviceAccountName: elasticsearch-master
       
       automountServiceAccountToken: false
       affinity:
@@ -88,22 +89,23 @@ spec:
             seccompProfile:
               type: RuntimeDefault
           env:
+            - name: BITNAMI_DEBUG
+              value: "false"
             - name: MY_POD_NAME
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: BITNAMI_DEBUG
-              value: "false"
-            - name: ELASTICSEARCH_CLUSTER_NAME
-              value: "elastic"
             - name: ELASTICSEARCH_IS_DEDICATED_NODE
               value: "yes"
             - name: ELASTICSEARCH_NODE_ROLES
-              value: ""
+              value: "master"
             - name: ELASTICSEARCH_TRANSPORT_PORT_NUMBER
               value: "9300"
             - name: ELASTICSEARCH_HTTP_PORT_NUMBER
               value: "9200"
+            - name: ELASTICSEARCH_CLUSTER_NAME
+              value: "elastic"
+            
             - name: ELASTICSEARCH_CLUSTER_HOSTS
               value: "elasticsearch-master-hl.cti-svcs-cdso-gdk-169643.svc.cluster.local,elasticsearch-coordinating-hl.cti-svcs-cdso-gdk-169643.svc.cluster.local,elasticsearch-data-hl.cti-svcs-cdso-gdk-169643.svc.cluster.local,elasticsearch-ingest-hl.cti-svcs-cdso-gdk-169643.svc.cluster.local,"
             - name: ELASTICSEARCH_TOTAL_NODES
@@ -113,9 +115,24 @@ spec:
             - name: ELASTICSEARCH_MINIMUM_MASTER_NODES
               value: "2"
             - name: ELASTICSEARCH_ADVERTISED_HOSTNAME
-              value: "$(MY_POD_NAME).elasticsearch-coordinating-hl.cti-svcs-cdso-gdk-169643.svc.cluster.local"
+              value: "$(MY_POD_NAME).elasticsearch-master-hl.cti-svcs-cdso-gdk-169643.svc.cluster.local"
             - name: ELASTICSEARCH_HEAP_SIZE
               value: "128m"
+            - name: ELASTICSEARCH_ENABLE_SECURITY
+              value: "true"
+            - name: ELASTICSEARCH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                    name: elasticsearch
+                    key: elasticsearch-password
+            - name: ELASTICSEARCH_ENABLE_FIPS_MODE
+              value: "false"
+            - name: ELASTICSEARCH_TLS_VERIFICATION_MODE
+              value: "full"
+            - name: ELASTICSEARCH_ENABLE_REST_TLS
+              value: "true"
+            - name: ELASTICSEARCH_TLS_USE_PEM
+              value: "true"
           ports:
             - name: rest-api
               containerPort: 9200
@@ -140,12 +157,24 @@ spec:
                 - /opt/bitnami/scripts/elasticsearch/healthcheck.sh
           resources:
             limits: {}
-            requests:
-              cpu: 25m
-              memory: 256Mi
+            requests: {}
           volumeMounts:
             - name: data
               mountPath: /bitnami/elasticsearch/data
+            - name: elasticsearch-certificates
+              mountPath: /opt/bitnami/elasticsearch/config/certs
+              readOnly: true
       volumes:
-        - name: "data"
-          emptyDir: {}
+        - name: elasticsearch-certificates
+          secret:
+            secretName: elasticsearch-master-crt
+            defaultMode: 256
+  volumeClaimTemplates:
+    - metadata:
+        name: "data"
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: "8Gi"

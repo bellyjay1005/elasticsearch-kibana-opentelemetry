@@ -14,7 +14,6 @@ helm upgrade elasticsearch \
   --set sysctlImage.enabled=true \
   --set data.persistence.size=16Gi \
   --set coordinating.service.type=LoadBalancer \
-  --set global.kibanaEnabled=true \
   --version 19.17.2 \
   -n citi-observability \
   bitnami/elasticsearch
@@ -32,7 +31,8 @@ helm template elasticsearch \
   --set data.persistence.size=16Gi \
   --set coordinating.service.type=LoadBalancer \
   --set global.kibanaEnabled=true \
+  --render-subchart-notes \
   --version 19.17.2 \
   -n cti-svcs-cdso-gdk-169643 \
   --output-dir citi-observability \
-  bitnami/elasticsearch 
+  bitnami/elasticsearch
