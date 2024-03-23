@@ -37,7 +37,7 @@ spec:
         ## Istio Labels: https://istio.io/docs/ops/deployment/requirements/
         app: master
       annotations:
-        checksum/tls: 3609afeb805a1e52b61832f66b3894c90259b3ebf7449926bb07c78543f7257f
+        checksum/tls: c7d18ca442603ea1ca62f91a64cbaf44d9c6451378af86faf1aae05139e6b4a0
     spec:
       serviceAccountName: elasticsearch-master
       

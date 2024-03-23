@@ -37,7 +37,7 @@ spec:
         ## Istio Labels: https://istio.io/docs/ops/deployment/requirements/
         app: coordinating-only
       annotations:
-        checksum/tls: bf0c537319e0b8916cadba75da8bf44653f4015d3ade955fd67580ebd6906ca0
+        checksum/tls: 54506c7b0994db4b12c60b685f03286112fce320366fdcf6036b6674c279a469
     spec:
       serviceAccountName: elasticsearch-coordinating
       

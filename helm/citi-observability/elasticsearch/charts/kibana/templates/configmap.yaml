@@ -18,8 +18,6 @@ data:
     server.port: 5601
     elasticsearch.hosts: [https://elasticsearch:9200]
     server.rewriteBasePath: false
-    elasticsearch.password: AdminAdmin
-    elasticsearch.username: kibana_system
     xpack.encryptedSavedObjects.encryptionKey: ABCDEFGHIJKLMNOPQRSTUVWXABCDEFGH
     xpack.reporting.encryptionKey: ABCDEFGHIJKLMNOPQRSTUVWXABCDEFGH
     xpack.security.encryptionKey: ABCDEFGHIJKLMNOPQRSTUVWXABCDEFGH

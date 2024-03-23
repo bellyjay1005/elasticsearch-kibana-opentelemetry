@@ -37,7 +37,7 @@ spec:
         ## Istio Labels: https://istio.io/docs/ops/deployment/requirements/
         app: data
       annotations:
-        checksum/tls: 955dd9e8d47943e996e914ca92c200892b7781b3094f37e3fc02c463e284f945
+        checksum/tls: 9e48ce5fbd258504cfe8d0f71c00c4abd9993e0e31a12f618e991891e96e9ccf
     spec:
       serviceAccountName: elasticsearch-data
       

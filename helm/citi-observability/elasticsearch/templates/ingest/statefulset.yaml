@@ -37,7 +37,7 @@ spec:
         ## Istio Labels: https://istio.io/docs/ops/deployment/requirements/
         app: ingest
       annotations:
-        checksum/tls: 476cbedc28eee12d7568a21f3d939d511343d93a42f7a7e3b41610244eeebfbe
+        checksum/tls: 1b267bd3bd976c6f9da2a7082ac67d415e29de842169a805a223770bb7e1aa18
     spec:
       serviceAccountName: elasticsearch-ingest
       

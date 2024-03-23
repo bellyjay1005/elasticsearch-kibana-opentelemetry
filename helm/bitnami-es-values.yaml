@@ -2380,8 +2380,6 @@ kibana:
       - infinity
 
   extraConfiguration: {
-    elasticsearch.username: "elastic",
-    elasticsearch.password: "AdminAdmin",
     xpack.security.encryptionKey: "ABCDEFGHIJKLMNOPQRSTUVWXABCDEFGH",
     xpack.encryptedSavedObjects.encryptionKey: "ABCDEFGHIJKLMNOPQRSTUVWXABCDEFGH",
     xpack.reporting.encryptionKey: "ABCDEFGHIJKLMNOPQRSTUVWXABCDEFGH"
